@@ -60,7 +60,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>edu.westga.comp2320.studymate/edu.westga.comp2320.studymate.HelloApplication
+                            <mainClass>edu.westga.comp2320.studymate/edu.westga.comp2320.studymate.StudyMateApplication
                             </mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
