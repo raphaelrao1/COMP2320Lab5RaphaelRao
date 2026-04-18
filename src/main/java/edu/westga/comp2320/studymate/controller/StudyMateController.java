@@ -28,7 +28,7 @@ public class StudyMateController {
         this.dayErrorLabel.setText("");
         this.subjectErrorLabel.setText("");
         this.sessionListView.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> {
+                (_, _, newValue) -> {
                     this.currentlySelected = newValue;
                     if (newValue != null) {
                         this.dayTextField.setText(String.valueOf(newValue.getDayOfWeek()));
