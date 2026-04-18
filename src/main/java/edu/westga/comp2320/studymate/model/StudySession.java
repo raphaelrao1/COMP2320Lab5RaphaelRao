@@ -1,10 +1,6 @@
 package edu.westga.comp2320.studymate.model;
 
-public class StudySession {
-    private final char dayOfWeek;
-    private final String subject;
-    private final String task;
-
+public record StudySession(char dayOfWeek, String subject, String task) {
     public StudySession(char dayOfWeek, String subject, String task) {
 
         char upperDay = Character.toUpperCase(dayOfWeek);
@@ -24,18 +20,6 @@ public class StudySession {
 
     public StudySession(char dayOfWeek, String subject) {
         this(dayOfWeek, subject, null);
-    }
-
-    public char getDayOfWeek() {
-        return this.dayOfWeek;
-    }
-
-    public String getSubject() {
-        return this.subject;
-    }
-
-    public String getTask() {
-        return this.task;
     }
 
     @Override

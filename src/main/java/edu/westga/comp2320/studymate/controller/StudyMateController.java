@@ -33,9 +33,9 @@ public class StudyMateController {
                 (_, _, newValue) -> {
                     this.currentlySelected = newValue;
                     if (newValue != null) {
-                        this.dayTextField.setText(String.valueOf(newValue.getDayOfWeek()));
-                        this.subjectTextField.setText(newValue.getSubject());
-                        this.taskTextField.setText(newValue.getTask() == null ? "" : newValue.getTask());
+                        this.dayTextField.setText(String.valueOf(newValue.dayOfWeek()));
+                        this.subjectTextField.setText(newValue.subject());
+                        this.taskTextField.setText(newValue.task() == null ? "" : newValue.task());
                         this.dayErrorLabel.setText("");
                         this.subjectErrorLabel.setText("");
                     }
