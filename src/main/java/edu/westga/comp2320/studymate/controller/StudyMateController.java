@@ -4,6 +4,7 @@ import edu.westga.comp2320.studymate.model.StudySession;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -17,6 +18,7 @@ public class StudyMateController {
     @FXML private ListView<StudySession> sessionListView;
 
     private ObservableList<StudySession> sessions;
+    private StudySession currentlySelected;
 
 
     @FXML
@@ -25,6 +27,17 @@ public class StudyMateController {
         this.sessionListView.setItems(this.sessions);
         this.dayErrorLabel.setText("");
         this.subjectErrorLabel.setText("");
+        this.sessionListView.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        this.dayTextField.setText(String.valueOf(newValue.getDayOfWeek()));
+                        this.subjectTextField.setText(newValue.getSubject());
+                        this.taskTextField.setText(newValue.getTask() == null ? "" : newValue.getTask());
+                        this.dayErrorLabel.setText("");
+                        this.subjectErrorLabel.setText("");
+                    }
+                }
+        );
     }
     @FXML
     private void handleAddButton() {
