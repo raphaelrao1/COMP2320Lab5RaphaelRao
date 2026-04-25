@@ -8,9 +8,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StudyMateController {
     @FXML private ToggleGroup dayToggleGroup;
@@ -28,6 +35,7 @@ public class StudyMateController {
     @FXML private Label subjectErrorLabel;
     @FXML private TextField taskTextField;
     @FXML private ListView<StudySession> sessionListView;
+    @FXML private MenuItem saveMenuItem;
 
     private ObservableList<StudySession> sessions;
     private StudySession currentlySelected;
@@ -101,11 +109,9 @@ public class StudyMateController {
     private void handleAddButton() {
         this.subjectErrorLabel.setText("");
 
-        // A radio button is always selected, so this cast is always safe.
         RadioButton selectedRadio = (RadioButton) this.dayToggleGroup.getSelectedToggle();
         char day = selectedRadio.getText().charAt(0);
 
-        // Collect labels of all checked subject boxes.
         List<String> selectedSubjects = new ArrayList<>();
         for (CheckBox box : this.subjectCheckBoxes) {
             if (box.isSelected()) {
@@ -113,7 +119,6 @@ public class StudyMateController {
             }
         }
 
-        // Validation: at least one subject must be checked.
         if (selectedSubjects.isEmpty()) {
             this.subjectErrorLabel.setText("select at least one subject");
             return;
@@ -122,7 +127,6 @@ public class StudyMateController {
         String taskInput = this.taskTextField.getText();
         String task = (taskInput == null || taskInput.trim().isEmpty()) ? null : taskInput.trim();
 
-        // Add one StudySession per checked subject; all share the same day and task.
         StudySession lastAdded = null;
         for (String subject : selectedSubjects) {
             StudySession newSession = (task == null)
@@ -132,8 +136,78 @@ public class StudyMateController {
             lastAdded = newSession;
         }
 
-        // Spec: after adding, one of the newly added sessions is selected.
         this.sessionListView.getSelectionModel().select(lastAdded);
+    }
+
+    @FXML
+    private void handleSave() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Study Sessions");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+        fileChooser.setInitialFileName("study_sessions.txt");
+
+        Stage stage = (Stage) this.sessionListView.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(stage);
+        if (file == null) {
+            return; // user cancelled
+        }
+
+        this.writeSessionsToFile(file);
+    }
+
+
+    private void writeSessionsToFile(File file) {
+        // LinkedHashMap preserves insertion order so days come out M, T, W, R, F.
+        Map<Character, List<StudySession>> byDay = new LinkedHashMap<>();
+        byDay.put('M', new ArrayList<>());
+        byDay.put('T', new ArrayList<>());
+        byDay.put('W', new ArrayList<>());
+        byDay.put('R', new ArrayList<>());
+        byDay.put('F', new ArrayList<>());
+
+        for (StudySession session : this.sessions) {
+            byDay.get(session.dayOfWeek()).add(session);
+        }
+
+        try (PrintWriter writer = new PrintWriter(file)) {
+            boolean firstBlock = true;
+            for (Map.Entry<Character, List<StudySession>> entry : byDay.entrySet()) {
+                List<StudySession> daySessions = entry.getValue();
+                if (daySessions.isEmpty()) {
+                    continue;
+                }
+                if (!firstBlock) {
+                    writer.println();
+                }
+                writer.println(dayName(entry.getKey()));
+                for (StudySession session : daySessions) {
+                    if (session.task() == null) {
+                        writer.println(session.subject());
+                    } else {
+                        writer.println(session.subject() + " - " + session.task());
+                    }
+                }
+                firstBlock = false;
+            }
+        } catch (IOException ex) {
+            Alert error = new Alert(Alert.AlertType.ERROR);
+            error.setTitle("Save Failed");
+            error.setHeaderText(null);
+            error.setContentText("Could not save file: " + ex.getMessage());
+            error.showAndWait();
+        }
+    }
+
+    private static String dayName(char day) {
+        return switch (day) {
+            case 'M' -> "Monday";
+            case 'T' -> "Tuesday";
+            case 'W' -> "Wednesday";
+            case 'R' -> "Thursday";
+            case 'F' -> "Friday";
+            default -> "";
+        };
     }
 
     @FXML
