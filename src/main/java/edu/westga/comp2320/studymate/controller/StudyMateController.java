@@ -2,8 +2,6 @@ package edu.westga.comp2320.studymate.controller;
 
 import edu.westga.comp2320.studymate.model.StudySession;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -150,7 +148,7 @@ public class StudyMateController {
         Stage stage = (Stage) this.sessionListView.getScene().getWindow();
         File file = fileChooser.showSaveDialog(stage);
         if (file == null) {
-            return; // user cancelled
+            return;
         }
 
         this.writeSessionsToFile(file);
@@ -158,7 +156,6 @@ public class StudyMateController {
 
 
     private void writeSessionsToFile(File file) {
-        // LinkedHashMap preserves insertion order so days come out M, T, W, R, F.
         Map<Character, List<StudySession>> byDay = new LinkedHashMap<>();
         byDay.put('M', new ArrayList<>());
         byDay.put('T', new ArrayList<>());
