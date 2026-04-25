@@ -1,20 +1,30 @@
 package edu.westga.comp2320.studymate.controller;
 
 import edu.westga.comp2320.studymate.model.StudySession;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class StudyMateController {
-    @FXML private TextField dayTextField;
-    @FXML private Label dayErrorLabel;
-    @FXML private TextField subjectTextField;
+    @FXML private ToggleGroup dayToggleGroup;
+    @FXML private RadioButton mondayRadio;
+    @FXML private RadioButton tuesdayRadio;
+    @FXML private RadioButton wednesdayRadio;
+    @FXML private RadioButton thursdayRadio;
+    @FXML private RadioButton fridayRadio;
+
+    @FXML private CheckBox englCheckBox;
+    @FXML private CheckBox histCheckBox;
+    @FXML private CheckBox mathCheckBox;
+    @FXML private CheckBox compCheckBox;
+
     @FXML private Label subjectErrorLabel;
     @FXML private TextField taskTextField;
     @FXML private ListView<StudySession> sessionListView;
@@ -22,84 +32,108 @@ public class StudyMateController {
     private ObservableList<StudySession> sessions;
     private StudySession currentlySelected;
 
+    private List<RadioButton> dayRadioButtons;
+    private List<CheckBox> subjectCheckBoxes;
+
 
     @FXML
     private void initialize() {
         this.sessions = FXCollections.observableArrayList();
         this.sessionListView.setItems(this.sessions);
-        this.dayErrorLabel.setText("");
         this.subjectErrorLabel.setText("");
+
+        this.dayRadioButtons = List.of(
+                this.mondayRadio,
+                this.tuesdayRadio,
+                this.wednesdayRadio,
+                this.thursdayRadio,
+                this.fridayRadio
+        );
+
+        this.subjectCheckBoxes = List.of(
+                this.englCheckBox,
+                this.histCheckBox,
+                this.mathCheckBox,
+                this.compCheckBox
+        );
+
+        this.mondayRadio.setSelected(true);
+        Platform.runLater(() -> this.mondayRadio.requestFocus());
+
         this.sessionListView.getSelectionModel().selectedItemProperty().addListener(
                 (_, _, newValue) -> {
                     this.currentlySelected = newValue;
                     if (newValue != null) {
-                        this.dayTextField.setText(String.valueOf(newValue.dayOfWeek()));
-                        this.subjectTextField.setText(newValue.subject());
+                        this.selectDayRadio(newValue.dayOfWeek());
+                        this.selectSubjectCheckBox(newValue.subject());
                         this.taskTextField.setText(newValue.task() == null ? "" : newValue.task());
-                        this.dayErrorLabel.setText("");
                         this.subjectErrorLabel.setText("");
+                    } else {
+                        this.clearSubjectCheckBoxes();
                     }
                 }
         );
-        this.dayTextField.textProperty().addListener(new ChangeListener<>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                if (newValue == null || newValue.isEmpty()) {
-                    StudyMateController.this.dayErrorLabel.setText("");
-                } else if (StudyMateController.this.isValidDay(newValue)) {
-                    StudyMateController.this.dayErrorLabel.setText("");
-                } else {
-                    StudyMateController.this.dayErrorLabel.setText("must be M, T, W, R, or F");
-                }
+    }
+
+    private void selectDayRadio(char day) {
+        for (RadioButton radio : this.dayRadioButtons) {
+            if (radio.getText().charAt(0) == day) {
+                radio.setSelected(true);
+                return;
             }
-        });    }
+        }
+    }
+
+
+    private void selectSubjectCheckBox(String subject) {
+        for (CheckBox box : this.subjectCheckBoxes) {
+            box.setSelected(box.getText().equals(subject));
+        }
+    }
+
+    private void clearSubjectCheckBoxes() {
+        for (CheckBox box : this.subjectCheckBoxes) {
+            box.setSelected(false);
+        }
+    }
+
     @FXML
     private void handleAddButton() {
-        this.dayErrorLabel.setText("");
         this.subjectErrorLabel.setText("");
 
-        String dayInput = this.dayTextField.getText();
-        String subjectInput = this.subjectTextField.getText();
-        String taskInput = this.taskTextField.getText();
+        // A radio button is always selected, so this cast is always safe.
+        RadioButton selectedRadio = (RadioButton) this.dayToggleGroup.getSelectedToggle();
+        char day = selectedRadio.getText().charAt(0);
 
-        boolean hasError = false;
-
-        if (!this.isValidDay(dayInput)) {
-            this.dayErrorLabel.setText("must be M, T, W, R, or F");
-            hasError = true;
+        // Collect labels of all checked subject boxes.
+        List<String> selectedSubjects = new ArrayList<>();
+        for (CheckBox box : this.subjectCheckBoxes) {
+            if (box.isSelected()) {
+                selectedSubjects.add(box.getText());
+            }
         }
 
-        if (subjectInput == null || subjectInput.trim().isEmpty()) {
-            this.subjectErrorLabel.setText("required");
-            hasError = true;
-        }
-
-        if (hasError) {
+        // Validation: at least one subject must be checked.
+        if (selectedSubjects.isEmpty()) {
+            this.subjectErrorLabel.setText("select at least one subject");
             return;
         }
 
-        char day = dayInput.trim().charAt(0);
-        StudySession newSession;
-        if (taskInput == null || taskInput.trim().isEmpty()) {
-            newSession = new StudySession(day, subjectInput);
-        } else {
-            newSession = new StudySession(day, subjectInput, taskInput);
+        String taskInput = this.taskTextField.getText();
+        String task = (taskInput == null || taskInput.trim().isEmpty()) ? null : taskInput.trim();
+
+        // Add one StudySession per checked subject; all share the same day and task.
+        StudySession lastAdded = null;
+        for (String subject : selectedSubjects) {
+            StudySession newSession = (task == null)
+                    ? new StudySession(day, subject)
+                    : new StudySession(day, subject, task);
+            this.sessions.add(newSession);
+            lastAdded = newSession;
         }
 
-        this.sessions.add(newSession);
-        this.sessionListView.getSelectionModel().select(newSession);
-    }
-
-    private boolean isValidDay(String input) {
-        if (input == null || input.trim().isEmpty()) {
-            return false;
-        }
-        String trimmed = input.trim();
-        if (trimmed.length() != 1) {
-            return false;
-        }
-        char day = Character.toUpperCase(trimmed.charAt(0));
-        return day == 'M' || day == 'T' || day == 'W' || day == 'R' || day == 'F';
+        // Spec: after adding, one of the newly added sessions is selected.
+        this.sessionListView.getSelectionModel().select(lastAdded);
     }
 
     @FXML
@@ -114,10 +148,9 @@ public class StudyMateController {
         }
 
         this.sessions.remove(this.currentlySelected);
-        this.dayTextField.setText("");
-        this.subjectTextField.setText("");
         this.taskTextField.setText("");
-        this.dayErrorLabel.setText("");
+        this.clearSubjectCheckBoxes();
         this.subjectErrorLabel.setText("");
+        this.mondayRadio.setSelected(true);
     }
 }
