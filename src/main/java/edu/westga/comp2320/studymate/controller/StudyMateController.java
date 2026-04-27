@@ -33,7 +33,6 @@ public class StudyMateController {
     @FXML private Label subjectErrorLabel;
     @FXML private TextField taskTextField;
     @FXML private ListView<StudySession> sessionListView;
-    @FXML private MenuItem saveMenuItem;
 
     private ObservableList<StudySession> sessions;
     private StudySession currentlySelected;
@@ -224,4 +223,5 @@ public class StudyMateController {
         this.subjectErrorLabel.setText("");
         this.mondayRadio.setSelected(true);
     }
+
 }
